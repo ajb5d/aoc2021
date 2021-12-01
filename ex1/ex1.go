@@ -50,7 +50,9 @@ func main() {
 
 	last = -1
 	incCount = 0
-	for index, _ := range input[2:] {
+
+	for index := range input[2:] {
+
 		currentSum := input[index] + input[index+1] + input[index+2]
 		if last != -1 && currentSum > last {
 			incCount++
