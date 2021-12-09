@@ -54,14 +54,9 @@ func min(a, b int) int {
 }
 
 func InBasin(depthA, depthB int) bool {
-	if depthA == 9 {
-		return false
-	}
-
-	if depthA >= depthB {
+	if depthA != 9 && depthA >= depthB {
 		return true
 	}
-
 	return false
 }
 
@@ -72,38 +67,20 @@ func basinSize(depthMap HeightMap, basin LowPoint) int {
 		currentPoint := newPoints[0]
 		currentDepth := depthMap.depth[currentPoint.y][currentPoint.x]
 		newPoints = newPoints[1:]
-
 		basinMap[currentPoint] = true
 
-		// Check Left
-		if currentPoint.x > 0 && InBasin(depthMap.depth[currentPoint.y][currentPoint.x-1], currentDepth) {
-			_, ok := basinMap[LowPoint{currentPoint.y, currentPoint.x - 1}]
-			if !ok {
-				newPoints = append(newPoints, LowPoint{currentPoint.y, currentPoint.x - 1})
-			}
-		}
+		offsets := [][2]int{{0, 1}, {0, -1}, {1, 0}, {-1, 0}}
+		for _, offset := range offsets {
+			targetPoint := LowPoint{currentPoint.y + offset[0], currentPoint.x + offset[1]}
+			if targetPoint.y >= 0 && targetPoint.y < len(depthMap.depth) &&
+				targetPoint.x >= 0 && targetPoint.x < len(depthMap.depth[currentPoint.y]) {
+				if InBasin(depthMap.depth[targetPoint.y][targetPoint.x], currentDepth) {
+					_, ok := basinMap[targetPoint]
+					if !ok {
+						newPoints = append(newPoints, targetPoint)
+					}
+				}
 
-		// Check Right
-		if currentPoint.x < len(depthMap.depth[currentPoint.y])-1 && InBasin(depthMap.depth[currentPoint.y][currentPoint.x+1], currentDepth) {
-			_, ok := basinMap[LowPoint{currentPoint.y, currentPoint.x + 1}]
-			if !ok {
-				newPoints = append(newPoints, LowPoint{currentPoint.y, currentPoint.x + 1})
-			}
-		}
-
-		// Check Up
-		if currentPoint.y > 0 && InBasin(depthMap.depth[currentPoint.y-1][currentPoint.x], currentDepth) {
-			_, ok := basinMap[LowPoint{currentPoint.y - 1, currentPoint.x}]
-			if !ok {
-				newPoints = append(newPoints, LowPoint{currentPoint.y - 1, currentPoint.x})
-			}
-		}
-
-		// Check Down
-		if currentPoint.y < len(depthMap.depth)-1 && InBasin(depthMap.depth[currentPoint.y+1][currentPoint.x], currentDepth) {
-			_, ok := basinMap[LowPoint{currentPoint.y + 1, currentPoint.x}]
-			if !ok {
-				newPoints = append(newPoints, LowPoint{currentPoint.y + 1, currentPoint.x})
 			}
 		}
 	}
@@ -119,25 +96,15 @@ func main() {
 	for y := 0; y < len(input.depth); y++ {
 		for x := 0; x < len(input.depth[y]); x++ {
 			closestMaxHeight := 10
+			offsets := [][2]int{{0, 1}, {0, -1}, {1, 0}, {-1, 0}}
 
-			// Check Up
-			if y > 0 {
-				closestMaxHeight = min(closestMaxHeight, input.depth[y-1][x])
-			}
-
-			// Check Down
-			if y < len(input.depth)-1 {
-				closestMaxHeight = min(closestMaxHeight, input.depth[y+1][x])
-			}
-
-			// Check Left
-			if x > 0 {
-				closestMaxHeight = min(closestMaxHeight, input.depth[y][x-1])
-			}
-
-			// Check Right
-			if x < len(input.depth[y])-1 {
-				closestMaxHeight = min(closestMaxHeight, input.depth[y][x+1])
+			for _, offset := range offsets {
+				if y+offset[0] >= 0 &&
+					y+offset[0] < len(input.depth) &&
+					x+offset[1] >= 0 &&
+					x+offset[1] < len(input.depth[y]) {
+					closestMaxHeight = min(closestMaxHeight, input.depth[y+offset[0]][x+offset[1]])
+				}
 			}
 
 			if input.depth[y][x] < closestMaxHeight {
