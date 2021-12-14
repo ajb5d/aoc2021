@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
+	"sort"
 	"strings"
 )
 
@@ -19,7 +21,6 @@ type PolymerDetails struct {
 
 func loadMapFromFile(inputPath string) PolymerDetails {
 	output := PolymerDetails{replacements: make(map[string]string)}
-
 	fileHandle, err := os.Open(inputPath)
 
 	if err != nil {
@@ -54,8 +55,6 @@ func main() {
 	flag.Parse()
 
 	input := loadMapFromFile(*inputFile)
-	fmt.Println("Part 1:")
-
 	counts := pairsForString(input.start)
 
 	for step := 1; step <= 40; step++ {
@@ -70,7 +69,6 @@ func main() {
 			}
 		}
 		counts = newCounts
-		// fmt.Println(counts)
 	}
 
 	runeCounts := make(map[string]int)
@@ -78,20 +76,15 @@ func main() {
 		runeCounts[string(key[1])] += value
 	}
 
-	//Add Terminal B
+	//Add Initial N
 	runeCounts["N"] += 1
 
-	fmt.Println(runeCounts)
+	keys := reflect.ValueOf(runeCounts).MapKeys()
+	sort.Slice(keys, func(i, j int) bool {
+		return runeCounts[keys[i].String()] > runeCounts[keys[j].String()]
+	})
 
-	mostCommonCount, leastCommonCount := 0, 0
-	for _, count := range runeCounts {
-		if count > mostCommonCount {
-			mostCommonCount = count
-		}
-		if count < leastCommonCount || leastCommonCount == 0 {
-			leastCommonCount = count
-		}
-	}
-	fmt.Printf("Part 1: %d\n", mostCommonCount-leastCommonCount)
+	mostCommonCount, leastCommonCount := runeCounts[keys[0].String()], runeCounts[keys[len(keys)-1].String()]
+	fmt.Printf("%d\n", mostCommonCount-leastCommonCount)
 
 }
