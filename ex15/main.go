@@ -18,10 +18,6 @@ const (
 	REALLY_BIG = 999999999
 )
 
-type Point struct {
-	row, col int
-}
-
 func loadMapFromFile(inputPath string) [][]int {
 	output := make([][]int, 0)
 	fileHandle, err := os.Open(inputPath)
@@ -44,21 +40,14 @@ func loadMapFromFile(inputPath string) [][]int {
 	return output
 }
 
-func (p Point) up() Point {
-	return Point{row: p.row - 1, col: p.col}
+type Point struct {
+	row, col int
 }
 
-func (p Point) down() Point {
-	return Point{row: p.row + 1, col: p.col}
-}
-
-func (p Point) left() Point {
-	return Point{row: p.row, col: p.col - 1}
-}
-
-func (p Point) right() Point {
-	return Point{row: p.row, col: p.col + 1}
-}
+func (p Point) up() Point    { return Point{row: p.row - 1, col: p.col} }
+func (p Point) down() Point  { return Point{row: p.row + 1, col: p.col} }
+func (p Point) left() Point  { return Point{row: p.row, col: p.col - 1} }
+func (p Point) right() Point { return Point{row: p.row, col: p.col + 1} }
 
 func valueForPoint(point Point, input [][]int) int {
 	mappedPoint := Point{row: point.row, col: point.col}
@@ -77,7 +66,7 @@ func valueForPoint(point Point, input [][]int) int {
 
 	cost := input[mappedPoint.row][mappedPoint.col] + costAdjustment
 	if cost > 9 {
-		cost = cost%10 + 1
+		cost = cost % 9
 	}
 	return cost
 }
@@ -90,13 +79,8 @@ type HeapElement struct {
 
 type PriorityPointQueue []*HeapElement
 
-func (p PriorityPointQueue) Len() int {
-	return len(p)
-}
-
-func (pq PriorityPointQueue) Less(i, j int) bool {
-	return pq[i].priority < pq[j].priority
-}
+func (p PriorityPointQueue) Len() int            { return len(p) }
+func (pq PriorityPointQueue) Less(i, j int) bool { return pq[i].priority < pq[j].priority }
 
 func (pq PriorityPointQueue) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
@@ -138,10 +122,12 @@ func pathSearch(input [][]int, extent int, progress bool) int {
 	distance := map[Point]int{}
 	previous := map[Point]Point{}
 	toVisit := make(PriorityPointQueue, extent*extent)
+	pointsToVisit := map[Point]bool{}
 
 	for i := 0; i < extent; i++ {
 		for j := 0; j < extent; j++ {
 			distance[Point{row: i, col: j}] = REALLY_BIG
+			pointsToVisit[Point{row: i, col: j}] = true
 			toVisit[i*extent+j] = &HeapElement{value: Point{row: i, col: j}, priority: REALLY_BIG}
 		}
 	}
@@ -155,14 +141,15 @@ func pathSearch(input [][]int, extent int, progress bool) int {
 			fmt.Println("To Visit:", len(toVisit))
 		}
 		currentNode := heap.Pop(&toVisit).(*HeapElement).value
+		delete(pointsToVisit, currentNode)
 
 		if currentNode.row == extent-1 && currentNode.col == extent-1 {
 			break
 		}
 
 		for _, neighbor := range []Point{currentNode.up(), currentNode.down(), currentNode.left(), currentNode.right()} {
-			index, inHeap := toVisit.findInHeap(neighbor)
-			if inHeap {
+			if _, ok := pointsToVisit[neighbor]; ok {
+				index, _ := toVisit.findInHeap(neighbor)
 				alternateDistance := distance[currentNode] + valueForPoint(neighbor, input)
 				if alternateDistance < distance[neighbor] {
 					distance[neighbor] = alternateDistance
@@ -172,7 +159,6 @@ func pathSearch(input [][]int, extent int, progress bool) int {
 				}
 			}
 		}
-		// heap.Init(&toVisit)
 	}
 
 	return distance[Point{row: extent - 1, col: extent - 1}]
@@ -185,7 +171,7 @@ func part1(input [][]int) {
 
 func part2(input [][]int) {
 	extent := len(input) * 5
-	fmt.Println("Part 2: ", pathSearch(input, extent, true))
+	fmt.Println("Part 2: ", pathSearch(input, extent, false))
 }
 
 func main() {
